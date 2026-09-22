@@ -40,9 +40,9 @@ def run_web():
 # ---------------------------------------------------------------------------
 HELP = (
     "Send me any shortlink and I'll try to bypass it.\n\n"
-    "Site families: vplink.in, arolinks.com and other safelink-style sites, "
-    "gplinks, droplink, ouo.io, linkvertise, plus generic shorteners "
-    "(bit.ly, tinyurl, cutt.ly, ...)."
+    "Site families: vplink.in, arolinks.com (browser bypass), gplinks, droplink, "
+    "ouo.io, linkvertise, plus generic shorteners (bit.ly, tinyurl, cutt.ly, ...).\n\n"
+    "Note: vplink/arolinks have a VPN check — if it fails, the admin must set PROXY_URL."
 )
 
 
@@ -59,7 +59,7 @@ async def handle(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if not text.lower().startswith(("http://", "https://")):
         await update.message.reply_text("That doesn't look like a link. Send a full URL starting with https://")
         return
-    msg = await update.message.reply_text("⏳ Bypassing… this can take up to ~30s.")
+    msg = await update.message.reply_text("⏳ Bypassing… browser-based sites can take ~30–60s.")
     try:
         result = await asyncio.to_thread(resolve_link, text)
         await msg.edit_text(f"✅ Bypassed:\n{result}")

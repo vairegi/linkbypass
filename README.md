@@ -1,42 +1,43 @@
 # Shortlink Bypass Bot
 
-A lightweight Telegram bot that bypasses link shorteners, built for **Render Free Tier** + **UptimeRobot** keep-alive.
+Lightweight Telegram bot that bypasses link shorteners, built for **Render Free Tier** + **UptimeRobot** keep-alive.
 
 ## What it supports
 
-- **Safelink-script family** (generic walker): `vplink.in`, `arolinks.com`, `gplinks`, `droplink`, `tnshort.net`, `rslinks.net`, `xpshort.com`, `earnl.xyz`, `adrinolinks.in`, `krownlinks.me`, `du-link.in`, `onepagelink.in`
-- **Linkvertise** (best-effort JSON/base64 target extraction)
-- **Generic shorteners** (`bit.ly`, `tinyurl`, `cutt.ly`, …) via redirect-following
+- **VPN-gated safelinks** — `vplink.in`, `arolinks.com` → real Chromium (Playwright) so the in-browser VPN check + timer actually run
+- **Other safelink-family sites** (fast pure-HTTP walker): gplinks, droplink, tnshort.net, rslinks.net, xpshort.com, earnl.xyz, adrinolinks.in, krownlinks.me, du-link.in, onepagelink.in
+- **Linkvertise** (best-effort JSON/base64 extraction)
+- **Generic shorteners** (bit.ly, tinyurl, cutt.ly, …) via redirect-following
 
 ## Deploy on Render (Free)
 
-1. Create a bot with [@BotFather](https://t.me/BotFather) → copy the token.
-2. Push this repo to GitHub, then on Render: **New → Web Service → connect repo**.
+1. [@BotFather](https://t.me/BotFather) → create bot → copy token.
+2. Push repo to GitHub → Render → **New → Web Service** → connect repo.
 3. Settings:
    - **Runtime:** Python 3.12
-   - **Build Command:** `pip install -r requirements.txt`
+   - **Build Command:** `pip install -r requirements.txt && playwright install --with-deps chromium`
    - **Start Command:** `python main.py`
-4. Environment variables:
-   - `BOT_TOKEN` = your BotFather token
-   - `PORT` is set by Render automatically — no need to add it.
-5. Deploy. The Flask server answers Render's health checks on `/` and `/health`.
+4. Env vars: `BOT_TOKEN` (required) · `PORT` (Render sets it) · `PROXY_URL` (optional, see below).
+5. Flask answers health checks on `/` and `/health`.
 
-## Keep it awake 24/7 with UptimeRobot
+## UptimeRobot (24/7)
 
-1. UptimeRobot → **Add New Monitor** → type **HTTP(s)**.
-2. URL: `https://<your-service>.onrender.com/health`
-3. Interval: **5 minutes**. The bot's Flask endpoint responds, preventing Render's free-tier spin-down.
+UptimeRobot → **Add Monitor → HTTP(s)** → `https://<your-service>.onrender.com/health` → interval **5 min**.
 
-## Known limitations
+## ⚠️ Important: the VPN check on vplink.in / arolinks.com
 
-- `vplink.in` / `arolinks.com` run a VPN/proxy check; datacenter IPs (Render's) can occasionally be served the "disable VPN" interstitial. Retry usually helps. If it becomes systematic, a residential proxy or a site-specific update is needed.
-- Shortener sites change layouts often. When a site breaks, the fix belongs in `adapters.py` (add a dedicated function and register it in `ADAPTERS`).
+Both sites run a client-side VPN/proxy check. With a real browser (already included) it *can* pass,
+**but datacenter IPs (Render's) are often still flagged**. If you see
+"no destination appeared / VPN check" errors, set env var:
 
-## Files
+```
+PROXY_URL = http://user:pass@your-residential-proxy:port
+```
 
-| File | Purpose |
-|---|---|
-| `main.py` | Telegram bot + Flask keep-alive server (single process) |
-| `resolver.py` | Routes a URL to the right adapter or the generic resolver |
-| `adapters.py` | Site-specific bypass logic (edit here when a site breaks) |
-| `requirements.txt` / `runtime.txt` / `Procfile` | Render/deployment config |
+A residential or mobile proxy routes the browser through a home/mobile IP, which passes the check.
+This is the reliable fix — cookies alone do NOT help (the gate is not a login wall).
+
+## Maintenance
+
+When a site changes, edit `adapters.py` (add/adjust an adapter, register it in `ADAPTERS`).
+The Telegram error message names the failing hop.

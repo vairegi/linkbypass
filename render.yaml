@@ -1,0 +1,13 @@
+# Optional one-click Render blueprint. Deploy via: New + → Blueprint → pick repo.
+services:
+  - type: web
+    name: shortlink-bypass-bot
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt && playwright install --with-deps chromium
+    startCommand: python main.py
+    envVars:
+      - key: BOT_TOKEN
+        sync: false # set in dashboard (from @BotFather)
+      - key: PROXY_URL
+        sync: false # optional: http://user:pass@residential-proxy:port
